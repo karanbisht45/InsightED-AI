@@ -1,4 +1,3 @@
-# app.py  — Advanced Streamlit frontend for InsightED AI
 import streamlit as st
 import pandas as pd
 import sqlite3
@@ -655,3 +654,4 @@ elif choice == "🏅 Feedback Generator":
 
 # ---------------- END ----------------
 st.markdown("---")
+
