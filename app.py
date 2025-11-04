@@ -87,18 +87,92 @@ if "choice" not in st.session_state:
     st.session_state.choice = "➕ Add Student"
 
 # ------------- SIDEBAR & MENU -------------
-st.sidebar.success(f"👤 Logged in as: {st.session_state.username}")
-if st.sidebar.button("Logout"):
+st.markdown(
+    """
+    <style>
+    /* Sidebar background & layout */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #1e1e2f, #2b2b3c) !important;
+        border-right: 1px solid #3b82f6;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Sidebar text color */
+    [data-testid="stSidebar"] * {
+        color: #e4e4e7 !important; /* soft white text */
+    }
+
+    /* Logged-in user box */
+    .login-box {
+        background: linear-gradient(90deg, #3b82f6, #2563eb);
+        padding: 14px;
+        border-radius: 10px;
+        color: white !important;
+        text-align: center;
+        font-weight: 600;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 10px rgba(59,130,246,0.3);
+        animation: fadeIn 0.8s ease-in-out;
+    }
+
+    /* Radio button labels */
+    label[data-baseweb="radio"] div {
+        color: #f1f5f9 !important;
+        font-weight: 500 !important;
+    }
+
+    /* Active (selected) menu item highlight */
+    [role="radiogroup"] > label[data-baseweb="radio"][aria-checked="true"] > div {
+        background-color: #3b82f6 !important;
+        border-radius: 10px;
+        padding: 5px 10px;
+        color: white !important;
+        font-weight: 600;
+        transition: 0.3s ease-in-out;
+    }
+
+    /* Hover effect */
+    [role="radiogroup"] > label[data-baseweb="radio"]:hover > div {
+        color: #60a5fa !important;
+        transition: 0.2s;
+    }
+
+    /* Smooth fade animation */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Sidebar header & logout
+st.sidebar.markdown(f"<div class='login-box'>👤 Logged in as: {st.session_state.username}</div>", unsafe_allow_html=True)
+
+if st.sidebar.button("🚪 Logout", use_container_width=True, type="secondary"):
     st.session_state.logged_in = False
     st.session_state.username = ""
     st.rerun()
 
+# Sidebar menu
 menu = st.sidebar.radio(
     "📚 InsightED AI Menu",
-    ["➕ Add Student", "📋 View / Filter Students", "🔎 Search", "✏️ Update", "🗑️ Delete",
-     "🔔 Notifications", "🤖 InsightBot", "📊 Performance Insights", "🏅 Feedback Generator", "🗓 Timetable"],
+    [
+        "➕ Add Student",
+        "📋 View / Filter Students",
+        "🔎 Search",
+        "✏️ Update",
+        "🗑️ Delete",
+        "🔔 Notifications",
+        "🤖 InsightBot",
+        "📊 Performance Insights",
+        "🏅 Feedback Generator",
+        "🗓 Timetable"
+    ],
     index=0
 )
+
 st.session_state.choice = menu
 choice = menu
 
@@ -353,44 +427,127 @@ elif choice == "📋 View / Filter Students":
         use_container_width=True
     )
 
-# ---------- SEARCH ----------
+# -------------Search----------------------
 elif choice == "🔎 Search":
-    st.subheader("🔎 Search Student")
-    tab1, tab2 = st.tabs(["By Student ID", "By Roll No"])
-    with tab1:
-        sid = st.text_input("Student ID", key="search_sid")
-        if st.button("Search by ID"):
-            row = get_student(sid.strip())
-            if row:
-                st.dataframe(to_df([row]))
-            else:
-                st.warning("No student found.")
-    with tab2:
-        rno = st.text_input("Roll No", key="search_rno")
-        if st.button("Search by Roll No"):
-            row = get_student_by_roll(rno.strip())
-            if row:
-                st.dataframe(to_df([row]))
-            else:
-                st.warning("No student found.")
+    st.markdown("<h2 style='color:#3B82F6;'>🔎 Search Student</h2>", unsafe_allow_html=True)
+    st.markdown("<hr style='margin-top:-10px;margin-bottom:10px;'>", unsafe_allow_html=True)
 
-# ---------- UPDATE ----------
+    st.markdown("Enter a valid **Student ID** to view complete details.")
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        sid = st.text_input("🎓 Student ID", placeholder="e.g., STU1021", key="search_sid")
+    with col2:
+        search_btn_id = st.button("Search", key="btn_search_id", type="primary", use_container_width=True)
+
+    if search_btn_id and sid.strip():
+        row = get_student(sid.strip())
+        if row:
+            df = to_df([row])
+            st.success(f"✅ Student found for ID: {sid.strip()}")
+
+            # ---------- Styled Student Snapshot ----------
+            st.markdown("""
+                <style>
+                    .fade-in {
+                        animation: fadeIn 0.8s ease-in-out;
+                    }
+                    @keyframes fadeIn {
+                        from {opacity: 0; transform: translateY(10px);}
+                        to {opacity: 1; transform: translateY(0);}
+                    }
+                    .green-card {
+                        background-color: #d1fae5; /* light green background */
+                        border-left: 6px solid #16a34a; /* darker green accent */
+                        border-radius: 12px;
+                        padding: 20px;
+                        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+                        margin-top: 10px;
+                    }
+                    .green-title {
+                        color: #065f46;
+                        font-weight: bold;
+                        margin-bottom: 10px;
+                    }
+                </style>
+                <div class="green-card fade-in">
+                    <h4 class="green-title">🧾 Student Snapshot</h4>
+                    <p style='color:#064e3b;margin-bottom:8px;'>Below are the complete details of the student.</p>
+                </div>
+            """, unsafe_allow_html=True)
+
+            # ---------- Styled Dataframe Container ----------
+            st.markdown("""
+                <div class="fade-in" style="background-color:#ecfdf5; border:1px solid #a7f3d0; border-radius:10px; padding:10px; margin-top:10px;">
+            """, unsafe_allow_html=True)
+            st.dataframe(df, use_container_width=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        else:
+            st.warning("⚠️ No student found with that Student ID.")
+    elif search_btn_id:
+        st.warning("Please enter a Student ID.")
+
+
 elif choice == "✏️ Update":
-    st.subheader("✏️ Update Student")
+    st.markdown("<h2 style='color:#3B82F6;'>✏️ Update Student</h2>", unsafe_allow_html=True)
+    st.markdown("<hr style='margin-top:-10px;margin-bottom:10px;'>", unsafe_allow_html=True)
 
+    # Style
+    st.markdown("""
+        <style>
+            .fade-in {
+                animation: fadeIn 0.7s ease-in-out;
+            }
+            @keyframes fadeIn {
+                from {opacity: 0; transform: translateY(10px);}
+                to {opacity: 1; transform: translateY(0);}
+            }
+            .green-card {
+                background-color: #ecfdf5;
+                border-left: 6px solid #16a34a;
+                border-radius: 12px;
+                padding: 20px;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+                margin-top: 10px;
+            }
+            .section-title {
+                color: #065f46;
+                font-weight: 600;
+                margin-bottom: 10px;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Session initialization
     if "upd_student" not in st.session_state:
         st.session_state.upd_student = None
 
-    sid = st.text_input("Enter Student ID to update", key="upd_sid")
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        sid = st.text_input("🎓 Enter Student ID to Update", placeholder="e.g., STU1021", key="upd_sid")
+    with col2:
+        fetch_btn = st.button("Fetch", key="upd_fetch", use_container_width=True, type="primary")
 
-    if st.button("Fetch", key="upd_fetch"):
+    # Fetch details
+    if fetch_btn:
         row = get_student(sid.strip())
         st.session_state.upd_student = row if row else None
         if not row:
-            st.error("Student not found.")
+            st.error("⚠️ Student not found. Please check the ID.")
 
+    # If student found, display update form
     if st.session_state.upd_student:
         row = st.session_state.upd_student
+
+        with st.container():
+            st.markdown("""
+                <div class="green-card fade-in">
+                    <h4 class="section-title">🧾 Student Details Loaded</h4>
+                    <p style='color:#064e3b;'>Modify the fields below to update the student's record.</p>
+                </div>
+            """, unsafe_allow_html=True)
+
+        # Extract existing values
         student_id = row.get("student_id")
         roll_no = row.get("roll_no", "")
         name = row.get("name", "")
@@ -415,40 +572,45 @@ elif choice == "✏️ Update":
         except Exception:
             dob_value = date(2003,1,1)
 
+        # Layout fields
         colA, colB, colC = st.columns(3)
         with colA:
-            new_roll = st.text_input("Roll No (Unique)", value=roll_no, key="upd_roll")
-            new_name = st.text_input("Full Name", value=name, key="upd_name")
-            new_age = st.number_input("Age", min_value=1, max_value=120, value=age, key="upd_age")
+            new_roll = st.text_input("Roll No (Unique)", value=roll_no)
+            new_name = st.text_input("Full Name", value=name)
+            new_age = st.number_input("Age", min_value=1, max_value=120, value=age)
         with colB:
             new_gender = st.selectbox("Gender", ["Male", "Female", "Others"],
-                                      index=["Male","Female","Others"].index(gender), key="upd_gender")
+                                      index=["Male","Female","Others"].index(gender))
             new_category = st.selectbox("Category", ["General","OBC","SC","ST","Other"],
-                                        index=["General","OBC","SC","ST","Other"].index(category), key="upd_cat")
-            new_course = st.text_input("Course", value=course, key="upd_course")
+                                        index=["General","OBC","SC","ST","Other"].index(category))
+            new_course = st.text_input("Course", value=course)
         with colC:
-            new_address = st.text_area("Address", value=address, height=90, key="upd_addr")
-            new_year = st.selectbox("Current Year", list(range(1,6)), index=(current_year-1), key="upd_year")
-            new_sem = st.selectbox("Semester", list(range(1,9)), index=(semester-1), key="upd_sem")
+            new_address = st.text_area("Address", value=address, height=90)
+            new_year = st.selectbox("Current Year", list(range(1,6)), index=(current_year-1))
+            new_sem = st.selectbox("Semester", list(range(1,9)), index=(semester-1))
 
         new_type = st.radio("Student Type", ["Hosteller","Day Scholar"],
-                            index=["Hosteller","Day Scholar"].index(type_), key="upd_type")
+                            index=["Hosteller","Day Scholar"].index(type_))
 
-        new_room = new_hostel = new_block = new_bus = new_route = None
+        # Conditional fields
         if new_type == "Hosteller":
             colH1, colH2, colH3 = st.columns(3)
-            with colH1: new_room = st.text_input("Room No", value=room_no, key="upd_room")
-            with colH2: new_hostel = st.text_input("Hostel Building", value=hostel_building, key="upd_hostel")
-            with colH3: new_block = st.text_input("Block", value=block, key="upd_block")
+            with colH1: new_room = st.text_input("Room No", value=room_no)
+            with colH2: new_hostel = st.text_input("Hostel Building", value=hostel_building)
+            with colH3: new_block = st.text_input("Block", value=block)
+            new_bus = new_route = None
         else:
             colD1, colD2 = st.columns(2)
-            with colD1: new_bus = st.text_input("Bus No", value=bus_no, key="upd_bus")
-            with colD2: new_route = st.text_input("Route", value=route, key="upd_route")
+            with colD1: new_bus = st.text_input("Bus No", value=bus_no)
+            with colD2: new_route = st.text_input("Route", value=route)
+            new_room = new_hostel = new_block = None
 
-        new_attendance = st.number_input("Attendance (%)", min_value=0, max_value=100, value=attendance, key="upd_att")
+        new_attendance = st.number_input("Attendance (%)", min_value=0, max_value=100, value=attendance)
         new_dob = st.date_input("Date of Birth (YYYY-MM-DD)", value=dob_value)
 
-        if st.button("Save Changes", type="primary", key="upd_save"):
+        # Save button
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("💾 Save Changes", type="primary", use_container_width=True, key="upd_save"):
             fields = {
                 "roll_no": new_roll.strip(),
                 "name": new_name.strip(),
@@ -470,35 +632,88 @@ elif choice == "✏️ Update":
             }
             ok, msg = update_student(student_id, **fields)
             if ok:
-                st.success(msg)
+                st.success("✅ " + msg)
                 st.session_state.upd_student = None
                 generate_erp_notifications()
             else:
-                st.error(msg)
+                st.error("❌ " + msg)
 
-# ---------- DELETE ----------
+
 elif choice == "🗑️ Delete":
-    st.subheader("🗑️ Delete Student")
-    sid = st.text_input("Student ID to delete", key="del_sid")
-    confirm = st.checkbox("I'm sure", key="del_confirm")
-    if st.button("Delete", type="secondary", key="del_btn"):
-        if not confirm:
-            st.warning("Please confirm deletion.")
+    st.markdown("<h2 style='color:#ef4444;'>🗑️ Delete Student</h2>", unsafe_allow_html=True)
+    st.markdown("<hr style='margin-top:-10px;margin-bottom:10px;'>", unsafe_allow_html=True)
+
+    # CSS styling for transitions and cards
+    st.markdown("""
+        <style>
+            .fade-in-del {
+                animation: fadeInDel 0.6s ease-in-out;
+            }
+            @keyframes fadeInDel {
+                from {opacity: 0; transform: scale(0.98);}
+                to {opacity: 1; transform: scale(1);}
+            }
+            .warning-card {
+                background-color: #fef2f2;
+                border-left: 6px solid #dc2626;
+                border-radius: 12px;
+                padding: 16px;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+                margin-bottom: 15px;
+            }
+            .success-glow {
+                background-color: #ecfdf5;
+                border-left: 6px solid #16a34a;
+                border-radius: 12px;
+                padding: 16px;
+                animation: glow 1s ease-in-out;
+            }
+            @keyframes glow {
+                0% {box-shadow: 0 0 0px rgba(34,197,94,0.6);}
+                50% {box-shadow: 0 0 10px rgba(34,197,94,0.8);}
+                100% {box-shadow: 0 0 0px rgba(34,197,94,0.6);}
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    with st.container():
+        st.markdown("""
+            <div class="warning-card fade-in-del">
+                <h4 style='color:#b91c1c; margin-bottom:5px;'>⚠️ Warning</h4>
+                <p style='color:#7f1d1d;'>Deleting a student record is permanent and cannot be undone. Please confirm carefully before proceeding.</p>
+            </div>
+        """, unsafe_allow_html=True)
+
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        sid = st.text_input("🎓 Enter Student ID to Delete", placeholder="e.g., STU1005", key="del_sid")
+    with col2:
+        confirm = st.checkbox("✅ I'm sure", key="del_confirm")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    delete_btn = st.button("🗑️ Delete Student", type="secondary", use_container_width=True, key="del_btn")
+
+    if delete_btn:
+        if not sid.strip():
+            st.warning("Please enter a Student ID first.")
+        elif not confirm:
+            st.warning("Please confirm deletion before proceeding.")
         else:
             try:
                 res = delete_student(sid.strip())
                 if isinstance(res, tuple):
                     ok, msg = res
                     if ok:
-                        st.success(msg)
+                        st.markdown(f"<div class='success-glow fade-in-del'><b>✅ {msg}</b></div>", unsafe_allow_html=True)
                     else:
                         st.error(msg)
                 elif res is True or res is None:
-                    st.success("Record deleted ✅")
+                    st.markdown("<div class='success-glow fade-in-del'><b>✅ Record deleted successfully!</b></div>", unsafe_allow_html=True)
                 else:
                     st.error("Could not delete record.")
             except Exception as e:
                 st.error(f"Error: {e}")
+
 
 # ---------- NOTIFICATIONS ----------
 elif choice == "🔔 Notifications":
@@ -662,6 +877,30 @@ elif choice == "📊 Performance Insights":
 
 # ---------- FEEDBACK GENERATOR ----------
 elif choice == "🏅 Feedback Generator":
+    st.markdown(
+        """
+        <style>
+        .green-card {
+            background: #e6f7e6;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            color: #064e3b !important; /* dark green text */
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .green-card b {
+            color: #065f46; /* slightly darker green for labels */
+        }
+        .green-card:hover {
+            transform: scale(1.01);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
     st.subheader("🏅 AI-Powered Student Feedback Generator")
     st.markdown("✨ _Get personalized, AI-generated feedback based on a student's performance and attendance!_")
 
@@ -683,12 +922,18 @@ elif choice == "🏅 Feedback Generator":
             fb = generate_feedback(name, attendance)
 
             st.markdown("### 🎯 **Personalized Feedback Report**")
-            st.info(f"""
-            👤 **Name:** {name}  
-            🎓 **Course:** {course}  
-            🧮 **Grade:** {grade}  
-            📈 **Attendance:** {attendance}%  
-            """)
+
+            st.markdown(
+                f"""
+                <div class="green-card">
+                    <b>👤 Name:</b> {name}<br>
+                    <b>🎓 Course:</b> {course}<br>
+                    <b>🧮 Grade:</b> {grade}<br>
+                    <b>📈 Attendance:</b> {attendance}%<br>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
             if attendance >= 90:
                 mood = "🌟 Excellent consistency! Keep up the great work ethic!"
