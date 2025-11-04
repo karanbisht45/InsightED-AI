@@ -30,13 +30,11 @@ except Exception:
 st.set_page_config(page_title="InsightED AI — Advanced", page_icon="🎓", layout="wide")
 
 # ---------------- INITIAL DB SETUP ----------------
-create_db()  # ensure students table, triggers, views exist
+create_db()  
 
-# Ensure timetable table exists and auto-generate if empty
 try:
     if hasattr(tt, "create_timetable_table"):
         tt.create_timetable_table()
-    # check if timetable has any rows; if empty, auto-generate
     with sqlite3.connect(DB_FILE) as conn:
         c = conn.cursor()
         try:
@@ -45,7 +43,6 @@ try:
         except Exception:
             count = 0
     if count == 0:
-        # generate for default courses if auto_generate_timetable exists
         if hasattr(tt, "auto_generate_timetable"):
             default_courses = tt.get_all_courses() if hasattr(tt, "get_all_courses") else ["BCA", "B.Tech", "BBA", "MBA"]
             try:
@@ -71,7 +68,6 @@ def to_df(rows):
             return pd.DataFrame(columns=cols)
         if isinstance(rows[0], dict):
             df = pd.DataFrame(rows)
-            # Attempt to return only columns we expect, falling back if missing
             existing = [c for c in cols if c in df.columns]
             return df[existing] if existing else df
         else:
@@ -79,7 +75,6 @@ def to_df(rows):
     except Exception:
         return pd.DataFrame(rows)
 
-# Because this is an admin-only project, we treat the current user as admin by default
 def is_admin_user() -> bool:
     return True
 
@@ -94,7 +89,6 @@ if "choice" not in st.session_state:
 # ------------- SIDEBAR & MENU -------------
 st.sidebar.success(f"👤 Logged in as: {st.session_state.username}")
 if st.sidebar.button("Logout"):
-    # For admin-only local usage, just clear username
     st.session_state.logged_in = False
     st.session_state.username = ""
     st.rerun()
@@ -166,14 +160,12 @@ def generate_erp_notifications():
                             c.execute("INSERT INTO notifications (student_id, title, body, type) VALUES (?, ?, ?, 'birthday')", (sid, title, body))
                 except Exception:
                     pass
-            # Performance
             if perf == "Excellent":
                 c.execute("SELECT 1 FROM notifications WHERE student_id=? AND type='performance' AND date(created_at)=date('now')", (sid,))
                 if not c.fetchone():
                     title = f"🌟 Congrats {name}!"
                     body = f"{name}, outstanding performance! Keep it up."
                     c.execute("INSERT INTO notifications (student_id, title, body, type) VALUES (?, ?, ?, 'performance')", (sid, title, body))
-            # Low attendance
             if attendance is not None and attendance < 60:
                 c.execute("SELECT 1 FROM notifications WHERE student_id=? AND type='attendance_warn' AND date(created_at)=date('now')", (sid,))
                 if not c.fetchone():
@@ -182,10 +174,8 @@ def generate_erp_notifications():
                     c.execute("INSERT INTO notifications (student_id, title, body, type) VALUES (?, ?, ?, 'attendance_warn')", (sid, title, body))
         conn.commit()
 
-# Generate ERP notifications on each load (light-weight)
 generate_erp_notifications()
 
-# quick topbar: show unread notifications count
 unread = len(get_unread_notifications())
 if unread:
     st.sidebar.markdown(f"🔔 **{unread}** new notification(s)")
@@ -204,7 +194,6 @@ def generate_feedback(name: str, attendance: int) -> str:
     else:
         return f"{name}, good job — keep the momentum going!"
 
-# ---------- ADD STUDENT ----------
 # ===================== ADD STUDENT SECTION =====================
 if choice == "➕ Add Student":
     st.markdown("<h2 style='color:#3B82F6;'>🎓 Add New Student (Advanced Form)</h2>", unsafe_allow_html=True)
@@ -539,7 +528,6 @@ elif choice == "🔔 Notifications":
 
 # ---------- INSIGHTBOT ----------
 elif choice == "🤖 InsightBot":
-    # Title and subtitle
     st.markdown("""
     <h2 style='text-align: center; color: #00BFFF;'>🤖 InsightBot</h2>
     <p style='text-align: center; color: gray; font-size: 17px;'>
@@ -548,16 +536,12 @@ elif choice == "🤖 InsightBot":
     </p>
     """, unsafe_allow_html=True)
 
-    # Query input box
     user_query = st.text_input("💬 Type your question here (e.g., 'Show students with attendance < 60')")
 
-    # Add a subtle horizontal divider
     st.markdown("<hr style='border: 1px solid #ccc;'>", unsafe_allow_html=True)
 
-    # Run Query button with gradient style
     run_query = st.button("🚀 Run Query", use_container_width=True)
 
-    # When button pressed
     if run_query and user_query:
         with st.spinner("🤖 Generating SQL query using AI..."):
             try:
@@ -566,11 +550,9 @@ elif choice == "🤖 InsightBot":
                 sql_query = ""
                 st.error(f"❌ Error: {e}")
 
-        # Handle empty SQL
         if not sql_query:
             st.warning("🤔 AI couldn’t generate a valid SQL query. Try rephrasing your question.")
         else:
-            # Stylish display of generated SQL
             st.markdown(f"""
             <div style='background-color: #1e1e1e; color: #00FF7F; padding: 10px;
                         border-radius: 10px; font-family: monospace; font-size: 15px;'>
@@ -578,7 +560,6 @@ elif choice == "🤖 InsightBot":
             </div>
             """, unsafe_allow_html=True)
 
-            # Run the query safely
             try:
                 conn = sqlite3.connect(DB_FILE)
                 df = pd.read_sql_query(sql_query, conn)
@@ -588,7 +569,6 @@ elif choice == "🤖 InsightBot":
                     st.success("✅ Query executed successfully!")
                     st.dataframe(df, use_container_width=True, height=400)
 
-                    # Display insights if numeric columns exist
                     numeric_cols = df.select_dtypes(include=['int64', 'float64']).columns
                     if not numeric_cols.empty:
                         st.markdown("### 📊 Quick Insights")
@@ -599,7 +579,6 @@ elif choice == "🤖 InsightBot":
             except Exception as e:
                 st.warning(f"⚠️ Could not execute the query.<br><b>Error:</b> {e}", unsafe_allow_html=True)
 
-    # Add helpful examples at the bottom
     with st.expander("💡 Example Queries"):
         st.markdown("""
         - *Show all students where attendance > 80*  
@@ -608,7 +587,6 @@ elif choice == "🤖 InsightBot":
         - *List top 5 students by marks*  
         """)
 
-    # A little style touch
     st.markdown("""
     <style>
     .stButton>button {
@@ -639,23 +617,19 @@ elif choice == "📊 Performance Insights":
             if df.empty:
                 st.info("No student data found in the database.")
             else:
-                # Ensure required columns exist
                 for col in ["course", "attendance", "roll_no", "name"]:
                     if col not in df.columns:
                         df[col] = "N/A" if col == "course" else 0
 
-                # Course filter
                 course_filter = st.selectbox(
                     "🎓 Select Course",
                     ["All"] + sorted(df["course"].dropna().unique().tolist())
                 )
 
-                # Apply filter
                 filtered_df = df.copy()
                 if course_filter != "All":
                     filtered_df = filtered_df[filtered_df["course"] == course_filter]
 
-                # Risk logic
                 filtered_df["Risk_Status"] = filtered_df["attendance"].apply(
                     lambda x: "⚠️ At Risk (<75%)" if x < 75 else "✅ Safe"
                 )
@@ -664,14 +638,12 @@ elif choice == "📊 Performance Insights":
                 at_risk = len(filtered_df[filtered_df["attendance"] < 75])
                 safe = total_students - at_risk
 
-                # Summary only
                 st.markdown(f"### 📊 Summary ({course_filter if course_filter != 'All' else 'All Courses'})")
                 col1, col2, col3 = st.columns(3)
                 col1.metric("Total Students", total_students)
                 col2.metric("At Risk (<75%)", at_risk)
                 col3.metric("Safe (≥75%)", safe)
 
-                # Risky student alerts only — no charts, no tables
                 if at_risk > 0:
                     st.markdown("### ⚠️ Alerts for Students Below 75% Attendance")
                     risky_students = filtered_df[filtered_df["attendance"] < 75][
@@ -705,14 +677,11 @@ elif choice == "🏅 Feedback Generator":
             attendance = row.get("attendance", 80)
             grade = row.get("grade", "Not Available")
 
-            # --- Dynamic progress bar for attendance ---
             st.write(f"📅 **Attendance Overview:** {attendance}%")
             st.progress(min(attendance / 100, 1.0))
 
-            # --- AI-generated feedback ---
             fb = generate_feedback(name, attendance)
 
-            # --- Enhanced feedback card ---
             st.markdown("### 🎯 **Personalized Feedback Report**")
             st.info(f"""
             👤 **Name:** {name}  
@@ -721,7 +690,6 @@ elif choice == "🏅 Feedback Generator":
             📈 **Attendance:** {attendance}%  
             """)
 
-            # --- Add AI feedback message with emojis and tone ---
             if attendance >= 90:
                 mood = "🌟 Excellent consistency! Keep up the great work ethic!"
             elif attendance >= 75:
@@ -729,12 +697,7 @@ elif choice == "🏅 Feedback Generator":
             else:
                 mood = "⚡ Improvement needed. Try maintaining regularity for better outcomes."
 
-            # Combine AI feedback with mood tone
             st.success(f"🧠 **AI Feedback:** {fb}\n\n{mood}")
-
-            # --- Optional motivational quote ---
-            st.markdown("---")
-            st.markdown("💬 _“Success is the sum of small efforts, repeated day in and day out.”_ – Robert Collier")
 
 
 # ---------- TIMETABLE ----------
@@ -758,11 +721,10 @@ elif choice == "🗓 Timetable":
     # Semesters from timetable module if present
     semesters_available = tt.get_all_semesters() if hasattr(tt, "get_all_semesters") else list(range(1,7))
     semester = st.selectbox("Select Semester", semesters_available)
-    # sections
     sections = tt.get_all_sections(course) if hasattr(tt, "get_all_sections") else ["A", "B", "C"]
     section = st.selectbox("Select Section", sections)
 
-    # Auto-generation controls - available to admin (you)
+    # Auto-generation controls - available to admin 
     st.markdown("#### Auto-generate timetables")
     col_gen1, col_gen2 = st.columns([2,1])
     with col_gen1:
@@ -784,7 +746,6 @@ elif choice == "🗓 Timetable":
 
     st.markdown("---")
 
-    # View selection: Daily or Weekly
     view_type = st.radio("View Mode", ["📆 Daily View", "🗓 Weekly View"], horizontal=True)
 
     if view_type == "📆 Daily View":
@@ -845,11 +806,9 @@ elif choice == "🗓 Timetable":
             except Exception as e:
                 st.error(f"Could not fetch weekly timetable: {e}")
 
-    # Manual management (add/delete) — always available to admin
     st.markdown("---")
     st.subheader("🛠️ Manage Timetable (Add / Delete)")
 
-    # Manual add entry
     with st.form("add_tt_form"):
         st.markdown("### ➕ Add New Entry (manual)")
         day_add = st.selectbox("Day", getattr(tt, "DAYS", ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]), key="add_day")
@@ -872,7 +831,6 @@ elif choice == "🗓 Timetable":
             except Exception as e:
                 st.error(f"Error adding entry: {e}")
 
-    # Delete entry
     st.markdown("### ❌ Delete Entry (manual)")
     try:
         entries = tt.get_timetable(course, semester, section)
