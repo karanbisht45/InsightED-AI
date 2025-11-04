@@ -102,7 +102,7 @@ menu = st.sidebar.radio(
 st.session_state.choice = menu
 choice = menu
 
-st.title("🎓 InsightED AI — Advanced Student DBMS (Admin)")
+st.title("🎓 InsightED AI")
 
 # ---------------- NOTIFICATIONS ----------------
 def push_notification(student_id: str, title: str, body: str, notif_type: str = "admin", payload: str = None):
@@ -196,7 +196,7 @@ def generate_feedback(name: str, attendance: int) -> str:
 
 # ===================== ADD STUDENT SECTION =====================
 if choice == "➕ Add Student":
-    st.markdown("<h2 style='color:#3B82F6;'>🎓 Add New Student (Advanced Form)</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#3B82F6;'>🎓 Add New Student</h2>", unsafe_allow_html=True)
     st.markdown("<hr style='margin-top:-10px;margin-bottom:15px;'>", unsafe_allow_html=True)
 
     with st.container():
